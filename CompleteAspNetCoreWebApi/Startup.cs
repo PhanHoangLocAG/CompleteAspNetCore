@@ -1,7 +1,11 @@
+using CompleteAspNetCoreWebApi.Data;
+using CompleteAspNetCoreWebApi.Data.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Versioning;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -16,9 +20,13 @@ namespace CompleteAspNetCoreWebApi
 {
     public class Startup
     {
+
+        public string ConnectionString { get; set; }
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
+            ConnectionString = configuration.GetConnectionString("DefaultConnectionStrings");
         }
 
         public IConfiguration Configuration { get; }
@@ -28,6 +36,25 @@ namespace CompleteAspNetCoreWebApi
         {
 
             services.AddControllers();
+
+            //configure db context
+            services.AddDbContext<AppDbContext>(options => options.UseSqlServer(ConnectionString));
+
+
+            //configure 
+            
+            services.AddTransient<AuthorService>();
+
+            //
+            services.AddApiVersioning(config =>
+            {
+                config.DefaultApiVersion = new ApiVersion(1, 0);
+                config.AssumeDefaultVersionWhenUnspecified = true;
+               // config.ApiVersionReader = new HeaderApiVersionReader("custom-version");
+                config.ApiVersionReader = new MediaTypeApiVersionReader();
+
+            });
+
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "CompleteAspNetCoreWebApi", Version = "v1" });
@@ -54,6 +81,8 @@ namespace CompleteAspNetCoreWebApi
             {
                 endpoints.MapControllers();
             });
+
+          //  AppDbInitialzer.Seed(app);
         }
     }
 }
